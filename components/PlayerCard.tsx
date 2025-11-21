@@ -18,6 +18,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  SelectChangeEvent,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -96,7 +97,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
     }
   };
 
-  const handleSelectRegisteredPlayer = (event: any) => {
+  const handleSelectRegisteredPlayer = (event: SelectChangeEvent<string>) => {
     setNameValue(event.target.value);
   };
 

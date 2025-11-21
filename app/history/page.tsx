@@ -68,7 +68,7 @@ export default function History() {
           </Paper>
         ) : (
           <Box>
-            {sortedTurns.map((turn, turnIndex) => (
+            {sortedTurns.map((turn) => (
               <Paper key={turn} sx={{ mb: 2, overflow: 'hidden' }}>
                 <Box sx={{ bgcolor: 'grey.100', px: 2, py: 1 }}>
                   <Typography variant="h6" color="text.primary">{turn}ターン</Typography>
