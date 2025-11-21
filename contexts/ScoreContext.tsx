@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Player, ScoreHistory } from '@/types';
 import { MAX_PLAYERS, MIN_PLAYERS, MIN_SCORE, MAX_SCORE } from '@/constants';
 
@@ -12,9 +12,22 @@ interface ScoreContextType {
   updatePlayerName: (id: string, name: string) => void;
   addScore: (playerId: string, score: number) => void;
   undoHistory: (historyId: string) => void;
+  resetAll: () => void;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
+
+const STORAGE_KEYS = {
+  PLAYERS: 'scoreboard_players',
+  HISTORY: 'scoreboard_history',
+};
+
+const DEFAULT_PLAYERS: Player[] = [
+  { id: '1', name: 'プレイヤー1', score: 0 },
+  { id: '2', name: 'プレイヤー2', score: 0 },
+  { id: '3', name: 'プレイヤー3', score: 0 },
+  { id: '4', name: 'プレイヤー4', score: 0 },
+];
 
 export const useScore = () => {
   const context = useContext(ScoreContext);
@@ -29,13 +42,54 @@ interface ScoreProviderProps {
 }
 
 export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
-  const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'プレイヤー1', score: 0 },
-    { id: '2', name: 'プレイヤー2', score: 0 },
-    { id: '3', name: 'プレイヤー3', score: 0 },
-    { id: '4', name: 'プレイヤー4', score: 0 },
-  ]);
+  const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
   const [history, setHistory] = useState<ScoreHistory[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // localStorageから初期データを読み込む
+  useEffect(() => {
+    const loadFromStorage = () => {
+      try {
+        const savedPlayers = localStorage.getItem(STORAGE_KEYS.PLAYERS);
+        const savedHistory = localStorage.getItem(STORAGE_KEYS.HISTORY);
+
+        if (savedPlayers) {
+          setPlayers(JSON.parse(savedPlayers));
+        }
+        if (savedHistory) {
+          setHistory(JSON.parse(savedHistory));
+        }
+      } catch (error) {
+        console.error('Failed to load from localStorage:', error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+
+    loadFromStorage();
+  }, []);
+
+  // playersが変更されたらlocalStorageに保存
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(players));
+      } catch (error) {
+        console.error('Failed to save players to localStorage:', error);
+      }
+    }
+  }, [players, isInitialized]);
+
+  // historyが変更されたらlocalStorageに保存
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(history));
+      } catch (error) {
+        console.error('Failed to save history to localStorage:', error);
+      }
+    }
+  }, [history, isInitialized]);
 
   const addPlayer = () => {
     if (players.length >= MAX_PLAYERS) {
@@ -105,6 +159,11 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
     setHistory(history.filter((h) => h.id !== historyId));
   };
 
+  const resetAll = () => {
+    setPlayers(DEFAULT_PLAYERS);
+    setHistory([]);
+  };
+
   return (
     <ScoreContext.Provider
       value={{
@@ -115,6 +174,7 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
         updatePlayerName,
         addScore,
         undoHistory,
+        resetAll,
       }}
     >
       {children}
