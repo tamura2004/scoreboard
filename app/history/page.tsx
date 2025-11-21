@@ -5,7 +5,6 @@ import {
   Typography,
   List,
   ListItem,
-  ListItemText,
   IconButton,
   AppBar,
   Toolbar,
@@ -22,16 +21,6 @@ import { useScore } from '@/contexts/ScoreContext';
 export default function History() {
   const { history, undoHistory } = useScore();
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString('ja-JP', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const formatScore = (score: number) => {
     return score >= 0 ? `+${score}` : `${score}`;
   };
@@ -40,6 +29,21 @@ export default function History() {
     const playerHistories = history.filter((h) => h.playerId === playerId);
     return playerHistories.length > 0 && playerHistories[0].id === historyId;
   };
+
+  // ターン数でグループ化
+  const groupedByTurn = history.reduce((acc, item) => {
+    const turn = item.sequenceNumber;
+    if (!acc[turn]) {
+      acc[turn] = [];
+    }
+    acc[turn].push(item);
+    return acc;
+  }, {} as Record<number, typeof history>);
+
+  // ターン番号を降順でソート（最新のターンが上）
+  const sortedTurns = Object.keys(groupedByTurn)
+    .map(Number)
+    .sort((a, b) => b - a);
 
   return (
     <>
@@ -63,58 +67,66 @@ export default function History() {
             </Typography>
           </Paper>
         ) : (
-          <List>
-            {history.map((item, index) => {
-              const isUndoable = canUndo(item.id, item.playerId);
-              return (
-                <Box key={item.id}>
-                  <ListItem
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        onClick={() => undoHistory(item.id)}
-                        color="primary"
-                        size="large"
-                        disabled={!isUndoable}
-                      >
-                        <UndoIcon />
-                      </IconButton>
-                    }
-                    sx={{ py: 2 }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="h6">{item.playerName}</Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box>
+            {sortedTurns.map((turn, turnIndex) => (
+              <Paper key={turn} sx={{ mb: 2, overflow: 'hidden' }}>
+                <Box sx={{ bgcolor: 'grey.100', px: 2, py: 1 }}>
+                  <Typography variant="h6" color="text.primary">{turn}ターン</Typography>
+                </Box>
+                <List sx={{ py: 0 }}>
+                  {groupedByTurn[turn].map((item, itemIndex) => {
+                    const isUndoable = canUndo(item.id, item.playerId);
+                    return (
+                      <Box key={item.id}>
+                        <ListItem
+                          secondaryAction={
+                            <IconButton
+                              edge="end"
+                              onClick={() => undoHistory(item.id)}
+                              color="primary"
+                              size="large"
+                              disabled={!isUndoable}
+                            >
+                              <UndoIcon />
+                            </IconButton>
+                          }
+                          sx={{ py: 1.5 }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 2,
+                              width: '100%',
+                              pr: 6,
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ minWidth: '100px', fontWeight: 'bold' }}>
+                              {item.playerName}
+                            </Typography>
+                            <Typography variant="body1" sx={{ minWidth: '50px', textAlign: 'right' }}>
+                              {item.totalScore - item.score}
+                            </Typography>
                             <Typography
-                              variant="h6"
+                              variant="body1"
                               color={item.score >= 0 ? 'primary.main' : 'error.main'}
-                              sx={{ fontWeight: 'bold' }}
+                              sx={{ minWidth: '60px', fontWeight: 'bold', textAlign: 'right' }}
                             >
                               {formatScore(item.score)}
                             </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                              →
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            <Typography variant="body1" sx={{ minWidth: '50px', fontWeight: 'bold', textAlign: 'right' }}>
                               {item.totalScore}
                             </Typography>
                           </Box>
-                        </Box>
-                      }
-                      secondary={
-                        <Typography variant="body2" color="text.secondary">
-                          {formatDate(item.timestamp)}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  {index < history.length - 1 && <Divider />}
-                </Box>
-              );
-            })}
-          </List>
+                        </ListItem>
+                        {itemIndex < groupedByTurn[turn].length - 1 && <Divider />}
+                      </Box>
+                    );
+                  })}
+                </List>
+              </Paper>
+            ))}
+          </Box>
         )}
       </Container>
     </>

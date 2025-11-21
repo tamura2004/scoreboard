@@ -11,4 +11,5 @@ export interface ScoreHistory {
   score: number;
   totalScore: number;
   timestamp: number;
+  sequenceNumber: number; // そのプレイヤーに対する何番目の加算か
 }

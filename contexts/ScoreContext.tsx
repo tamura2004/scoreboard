@@ -75,6 +75,10 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
       return;
     }
 
+    // そのプレイヤーの履歴数を数えて、次のシーケンス番号を決定
+    const playerHistoryCount = history.filter((h) => h.playerId === playerId).length;
+    const sequenceNumber = playerHistoryCount + 1;
+
     const historyItem: ScoreHistory = {
       id: Date.now().toString(),
       playerId,
@@ -82,6 +86,7 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
       score,
       totalScore: newScore,
       timestamp: Date.now(),
+      sequenceNumber,
     };
 
     setPlayers(players.map((p) => (p.id === playerId ? { ...p, score: newScore } : p)));
