@@ -14,6 +14,10 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,7 +30,7 @@ interface PlayerCardProps {
 }
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
-  const { updatePlayerName, addScore, history } = useScore();
+  const { players, updatePlayerName, addScore, history, registeredPlayers, addRegisteredPlayer } = useScore();
   const [addScoreValue, setAddScoreValue] = useState<number>(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [nameValue, setNameValue] = useState(player.name);
@@ -65,12 +69,35 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
   };
 
   const handleSaveName = () => {
-    if (nameValue.trim()) {
-      updatePlayerName(player.id, nameValue);
+    const trimmedName = nameValue.trim();
+    if (trimmedName) {
+      // 他のプレイヤーと同じ名前がないかチェック
+      const isDuplicatePlayer = players.some(
+        p => p.id !== player.id && p.name === trimmedName
+      );
+      if (isDuplicatePlayer) {
+        alert('同じ名前のプレイヤーがすでに存在します');
+        return;
+      }
+
+      // デフォルト名のパターン（プレイヤー＋数字）以外で、登録済みプレイヤー名に存在しない場合は追加
+      const defaultNamePattern = /^プレイヤー\d+$/;
+      const isDefaultName = defaultNamePattern.test(trimmedName);
+      const isAlreadyRegistered = registeredPlayers.some(rp => rp.name === trimmedName);
+
+      if (!isDefaultName && !isAlreadyRegistered) {
+        addRegisteredPlayer(trimmedName);
+      }
+
+      updatePlayerName(player.id, trimmedName);
       setIsDialogOpen(false);
     } else {
       setNameValue(player.name);
     }
+  };
+
+  const handleSelectRegisteredPlayer = (event: any) => {
+    setNameValue(event.target.value);
   };
 
   return (
@@ -150,6 +177,22 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
       >
         <DialogTitle>プレイヤー名の編集</DialogTitle>
         <DialogContent>
+{registeredPlayers.length > 0 && (
+            <FormControl fullWidth margin="dense">
+              <InputLabel>登録済みプレイヤー名から選択</InputLabel>
+              <Select
+                value=""
+                onChange={handleSelectRegisteredPlayer}
+                label="登録済みプレイヤー名から選択"
+              >
+                {registeredPlayers.map((rp) => (
+                  <MenuItem key={rp.id} value={rp.name}>
+                    {rp.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           <TextField
             value={nameValue}
             onChange={(e) => setNameValue(e.target.value)}

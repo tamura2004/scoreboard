@@ -1,18 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Player, ScoreHistory } from '@/types';
+import { Player, ScoreHistory, RegisteredPlayer } from '@/types';
 import { MAX_PLAYERS, MIN_PLAYERS, MIN_SCORE, MAX_SCORE } from '@/constants';
 
 interface ScoreContextType {
   players: Player[];
   history: ScoreHistory[];
+  registeredPlayers: RegisteredPlayer[];
   addPlayer: () => void;
   removeLastPlayer: () => void;
   updatePlayerName: (id: string, name: string) => void;
   addScore: (playerId: string, score: number) => void;
   undoHistory: (historyId: string) => void;
   resetAll: () => void;
+  addRegisteredPlayer: (name: string) => void;
+  updateRegisteredPlayer: (id: string, name: string) => void;
+  deleteRegisteredPlayer: (id: string) => void;
 }
 
 const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
@@ -20,6 +24,7 @@ const ScoreContext = createContext<ScoreContextType | undefined>(undefined);
 const STORAGE_KEYS = {
   PLAYERS: 'scoreboard_players',
   HISTORY: 'scoreboard_history',
+  REGISTERED_PLAYERS: 'scoreboard_registered_players',
 };
 
 const DEFAULT_PLAYERS: Player[] = [
@@ -44,6 +49,7 @@ interface ScoreProviderProps {
 export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
   const [players, setPlayers] = useState<Player[]>(DEFAULT_PLAYERS);
   const [history, setHistory] = useState<ScoreHistory[]>([]);
+  const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // localStorageから初期データを読み込む
@@ -52,12 +58,16 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
       try {
         const savedPlayers = localStorage.getItem(STORAGE_KEYS.PLAYERS);
         const savedHistory = localStorage.getItem(STORAGE_KEYS.HISTORY);
+        const savedRegisteredPlayers = localStorage.getItem(STORAGE_KEYS.REGISTERED_PLAYERS);
 
         if (savedPlayers) {
           setPlayers(JSON.parse(savedPlayers));
         }
         if (savedHistory) {
           setHistory(JSON.parse(savedHistory));
+        }
+        if (savedRegisteredPlayers) {
+          setRegisteredPlayers(JSON.parse(savedRegisteredPlayers));
         }
       } catch (error) {
         console.error('Failed to load from localStorage:', error);
@@ -90,6 +100,17 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
       }
     }
   }, [history, isInitialized]);
+
+  // registeredPlayersが変更されたらlocalStorageに保存
+  useEffect(() => {
+    if (isInitialized) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.REGISTERED_PLAYERS, JSON.stringify(registeredPlayers));
+      } catch (error) {
+        console.error('Failed to save registered players to localStorage:', error);
+      }
+    }
+  }, [registeredPlayers, isInitialized]);
 
   const addPlayer = () => {
     if (players.length >= MAX_PLAYERS) {
@@ -164,17 +185,39 @@ export const ScoreProvider: React.FC<ScoreProviderProps> = ({ children }) => {
     setHistory([]);
   };
 
+  const addRegisteredPlayer = (name: string) => {
+    const newPlayer: RegisteredPlayer = {
+      id: Date.now().toString(),
+      name: name.trim(),
+    };
+    setRegisteredPlayers([...registeredPlayers, newPlayer]);
+  };
+
+  const updateRegisteredPlayer = (id: string, name: string) => {
+    setRegisteredPlayers(
+      registeredPlayers.map((p) => (p.id === id ? { ...p, name: name.trim() } : p))
+    );
+  };
+
+  const deleteRegisteredPlayer = (id: string) => {
+    setRegisteredPlayers(registeredPlayers.filter((p) => p.id !== id));
+  };
+
   return (
     <ScoreContext.Provider
       value={{
         players,
         history,
+        registeredPlayers,
         addPlayer,
         removeLastPlayer,
         updatePlayerName,
         addScore,
         undoHistory,
         resetAll,
+        addRegisteredPlayer,
+        updateRegisteredPlayer,
+        deleteRegisteredPlayer,
       }}
     >
       {children}

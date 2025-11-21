@@ -13,3 +13,8 @@ export interface ScoreHistory {
   timestamp: number;
   sequenceNumber: number; // そのプレイヤーに対する何番目の加算か
 }
+
+export interface RegisteredPlayer {
+  id: string;
+  name: string;
+}

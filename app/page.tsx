@@ -6,6 +6,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import HistoryIcon from '@mui/icons-material/History';
+import PeopleIcon from '@mui/icons-material/People';
 import Link from 'next/link';
 import { PlayerCard } from '@/components/PlayerCard';
 import { useScore } from '@/contexts/ScoreContext';
@@ -58,6 +59,16 @@ export default function Home() {
               sx={{ mr: 2 }}
             >
               <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="プレイヤー名管理">
+            <IconButton
+              color="inherit"
+              component={Link}
+              href="/players"
+              sx={{ mr: 2 }}
+            >
+              <PeopleIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="履歴">
